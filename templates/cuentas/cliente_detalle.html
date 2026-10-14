@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block titulo %}{{ cliente }}{% endblock %}
+{% block migas %}<nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'cuentas:clientes' %}">Clientes</a></li><li class="breadcrumb-item active">{{ cliente }}</li></ol></nav>{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <h1>{{ cliente }}</h1>
+  <a href="{% url 'cuentas:cliente_editar' cliente.pk %}" class="btn btn-outline-dark"><i class="bi bi-pencil"></i> Editar datos</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-4">
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2>Datos</h2></div>
+      <div class="tarjeta-cuerpo">
+        <dl class="mb-0 small">
+          <dt>CUIT / DNI</dt><dd>{{ cliente.cuit|default:"—" }}</dd>
+          <dt>Email</dt><dd>{{ cliente.email|default:"—" }}</dd>
+          <dt>Teléfono</dt><dd>{{ cliente.telefono|default:"—" }}</dd>
+          <dt>Dirección</dt><dd>{{ cliente.direccion|default:"—" }}</dd>
+          {% if cliente.notas %}<dt>Notas</dt><dd class="mb-0">{{ cliente.notas|linebreaksbr }}</dd>{% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera">
+        <h2>Personas con acceso al portal</h2>
+        <a href="{% url 'cuentas:contacto_nuevo' cliente.pk %}" class="btn btn-sm btn-dark"><i class="bi bi-person-plus"></i> Dar acceso</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-tarjeta">
+          <thead><tr><th>Nombre</th><th>Email</th><th>WhatsApp</th><th>Avisos</th><th></th></tr></thead>
+          <tbody>
+          {% for c in contactos %}
+            <tr class="{% if not c.is_active %}text-muted{% endif %}">
+              <td>{{ c.nombre_completo }}{% if not c.is_active %} <span class="badge text-bg-secondary">Inactivo</span>{% endif %}</td>
+              <td>{{ c.email }}</td>
+              <td class="small">{{ c.telefono|default:"—" }}</td>
+              <td>{% if c.notif_email %}<i class="bi bi-envelope" title="Email"></i>{% endif %} {% if c.notif_whatsapp and c.telefono %}<i class="bi bi-whatsapp" title="WhatsApp"></i>{% endif %}</td>
+              <td class="text-end text-nowrap">
+                {% if not c.has_usable_password %}
+                <form method="post" action="{% url 'cuentas:persona_invitar' c.pk %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-envelope"></i> Reenviar invitación</button>
+                </form>
+                {% endif %}
+                <a href="{% url 'cuentas:contacto_editar' cliente.pk c.pk %}" class="btn btn-sm btn-outline-dark"><i class="bi bi-pencil"></i></a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="lista-vacia"><i class="bi bi-person-lock"></i>Nadie de este cliente tiene acceso al portal todavía.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2>Obras</h2>{% if perm.gerencia %}<a href="{% url 'obras:nueva' %}?cliente={{ cliente.pk }}" class="btn btn-sm btn-outline-dark"><i class="bi bi-plus-lg"></i> Nueva obra</a>{% endif %}</div>
+      <ul class="list-group list-group-flush">
+        {% for o in obras %}
+          <a href="{% url 'obras:detalle' o.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between"><span>{{ o }}</span>{% include "obras/_etapa.html" with obra=o %}</a>
+        {% empty %}
+          <li class="list-group-item text-muted small">Sin obras.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

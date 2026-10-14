@@ -1,0 +1,74 @@
+from django import forms
+
+from apps.cuentas.models import Area, MiembroArea, Usuario
+
+from .models import AsignacionObra, Hito, Obra
+
+
+class FechaInput(forms.DateInput):
+    input_type = "date"
+
+    def __init__(self, **kwargs):
+        super().__init__(format="%Y-%m-%d", **kwargs)
+
+
+class ObraForm(forms.ModelForm):
+    class Meta:
+        model = Obra
+        fields = ["codigo", "nombre", "cliente", "direccion", "localidad", "superficie_m2", "descripcion",
+                  "etapa", "estado", "fecha_inicio", "fecha_fin_estimada", "avance"]
+        widgets = {
+            "descripcion": forms.Textarea(attrs={"rows": 3}),
+            "fecha_inicio": FechaInput(),
+            "fecha_fin_estimada": FechaInput(),
+            "avance": forms.NumberInput(attrs={"min": 0, "max": 100, "step": 1}),
+        }
+
+    def clean_codigo(self):
+        return self.cleaned_data["codigo"].strip().upper()
+
+    def clean(self):
+        datos = super().clean()
+        inicio, fin = datos.get("fecha_inicio"), datos.get("fecha_fin_estimada")
+        if inicio and fin and fin < inicio:
+            self.add_error("fecha_fin_estimada", "El fin estimado no puede ser anterior al inicio.")
+        return datos
+
+
+class AsignacionForm(forms.ModelForm):
+    class Meta:
+        model = AsignacionObra
+        fields = ["usuario", "area", "funcion", "es_responsable"]
+        labels = {"usuario": "Persona", "area": "Área"}
+
+    def __init__(self, *args, obra, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.obra = obra
+        self.fields["usuario"].queryset = Usuario.objects.filter(tipo=Usuario.Tipo.PERSONAL, is_active=True)
+        self.fields["usuario"].label_from_instance = lambda u: f"{u.nombre_completo}" + (f" · {u.cargo}" if u.cargo else "")
+        self.fields["area"].queryset = Area.objects.all()
+
+    def clean(self):
+        datos = super().clean()
+        usuario, area = datos.get("usuario"), datos.get("area")
+        if usuario and area:
+            if not MiembroArea.objects.filter(usuario=usuario, area=area).exists():
+                self.add_error("area", f"{usuario.nombre_completo} no pertenece a {area.nombre}. "
+                                       "Asignale esa área en Personal o elegí otra.")
+            elif AsignacionObra.objects.filter(obra=self.obra, usuario=usuario, area=area).exists():
+                self.add_error("usuario", f"{usuario.nombre_completo} ya está en esta obra por {area.nombre}.")
+        return datos
+
+    def save(self, commit=True):
+        asignacion = super().save(commit=False)
+        asignacion.obra = self.obra
+        if commit:
+            asignacion.save()
+        return asignacion
+
+
+class HitoForm(forms.ModelForm):
+    class Meta:
+        model = Hito
+        fields = ["titulo", "fecha", "visible_cliente"]
+        widgets = {"fecha": FechaInput()}

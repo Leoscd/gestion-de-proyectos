@@ -1,0 +1,23 @@
+{% load core_tags %}<ul class="linea-tiempo">
+  {% for r in registros %}
+  <li class="{% if r.accion|slice:':9' == 'solicitud' or r.accion|slice:':4' == 'obra' %}importante{% endif %}">
+    <div>{{ r.descripcion }}</div>
+    <div class="small text-muted">
+      {{ r.fecha|date:"d/m/Y H:i" }} · {{ r.usuario_nombre|default:"Sistema" }}{% if r.ip %} · IP {{ r.ip }}{% endif %}
+      {% if mostrar_obra and r.obra %} · <a href="{% url 'obras:detalle' r.obra_id %}">{{ r.obra.nombre }}</a>{% endif %}
+    </div>
+    {% if r.detalle %}
+    <details class="small mt-1">
+      <summary class="text-muted">Detalle</summary>
+      <ul class="mb-0">
+        {% for clave, valor in r.detalle.items %}
+          <li><strong>{{ clave }}:</strong> {% if valor|es_cambio %}{{ valor.0 }} → {{ valor.1 }}{% elif valor|es_lista %}{{ valor|join:", "|default:"—" }}{% else %}{{ valor }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+  </li>
+  {% empty %}
+  <li class="text-muted small">Todavía no hay actividad registrada.</li>
+  {% endfor %}
+</ul>

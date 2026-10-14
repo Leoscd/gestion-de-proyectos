@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block titulo %}Tablero{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <div>
+    <h1>Hola, {{ user.first_name|default:user.email }}</h1>
+    <div class="text-muted small">
+      {% for m in mis_areas %}{{ m.area.nombre }}{% if m.rol == "responsable" %} (responsable){% endif %}{% if not forloop.last %} · {% endif %}{% empty %}Sin área asignada{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera">
+        <h2><i class="bi bi-buildings"></i> {% if perm.gerencia %}Obras activas{% else %}Mis obras activas{% endif %} <span class="badge text-bg-light border">{{ total_obras_activas }}</span></h2>
+        <a href="{% url 'obras:lista' %}" class="small">Ver todas</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover table-tarjeta">
+          <thead><tr><th>Obra</th><th>Cliente</th><th>Etapa</th><th style="width: 30%">Avance</th></tr></thead>
+          <tbody>
+          {% for o in obras_activas %}
+            <tr>
+              <td><a href="{% url 'obras:detalle' o.pk %}" class="fw-semibold">{{ o.nombre }}</a><div class="small text-muted">{{ o.codigo }}</div></td>
+              <td>{{ o.cliente }}</td>
+              <td><span class="badge text-bg-light border">{{ o.get_etapa_display }}</span></td>
+              <td>
+                <div class="progress" role="progressbar" style="height: 8px"><div class="progress-bar bg-success" style="width: {{ o.avance }}%"></div></div>
+                <div class="small text-muted">{{ o.avance }}%</div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4"><div class="lista-vacia"><i class="bi bi-buildings"></i>{% if perm.gerencia %}No hay obras activas.{% else %}Todavía no te asignaron a ninguna obra.{% endif %}</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% if esperando_cliente is not None %}
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-hourglass-split"></i> Esperando respuesta del cliente</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for s in esperando_cliente %}
+          <a href="{% url 'aprobaciones:detalle' s.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+            <span><strong>{{ s.titulo }}</strong><br><span class="small text-muted">{{ s.obra.nombre }} · {{ s.get_tipo_display }}</span></span>
+            {% include "aprobaciones/_estado.html" with s=s %}
+          </a>
+        {% empty %}
+          <li class="list-group-item text-muted small">Nada pendiente del lado del cliente.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if ultimos_documentos is not None %}
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-folder2-open"></i> Últimos archivos</h2><a href="{% url 'documentos:lista' %}" class="small">Ver todos</a></div>
+      <ul class="list-group list-group-flush">
+        {% for d in ultimos_documentos %}
+          <a href="{% url 'documentos:detalle' d.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between">
+            <span><i class="bi bi-file-earmark"></i> {{ d.titulo }} <span class="small text-muted">· {{ d.obra.nombre|default:"Biblioteca general" }}</span></span>
+            <span class="small text-muted">{{ d.actualizado|timesince }}</span>
+          </a>
+        {% empty %}
+          <li class="list-group-item text-muted small">Sin archivos todavía.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="col-xl-4">
+    {% if permisos_por_vencer %}
+    <div class="tarjeta mb-3 border-danger">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-calendar-x text-danger"></i> Permisos por vencer</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for d in permisos_por_vencer %}
+          <a href="{% url 'documentos:detalle' d.pk %}" class="list-group-item list-group-item-action">
+            <strong>{{ d.titulo }}</strong><br>
+            <span class="small {% if d.vencimiento < hoy %}text-danger fw-semibold{% else %}text-muted{% endif %}">{{ d.obra.nombre|default:"Biblioteca general" }} · {% if d.vencimiento < hoy %}venció el {{ d.vencimiento|date:"d/m/Y" }}{% else %}vence el {{ d.vencimiento|date:"d/m/Y" }} ({{ d.vencimiento|timeuntil }}){% endif %}</span>
+          </a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if planos_a_revisar %}
+    <div class="tarjeta mb-3 border-warning">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-rulers"></i> Planos para revisar</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for d in planos_a_revisar %}
+          <a href="{% url 'documentos:detalle' d.pk %}" class="list-group-item list-group-item-action"><strong>{{ d }}</strong><br><span class="small text-muted">{{ d.obra.nombre|default:"Biblioteca general" }}</span></a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if para_revisar %}
+    <div class="tarjeta mb-3 border-warning">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-shield-check"></i> Para revisar antes de enviar</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for s in para_revisar %}
+          <a href="{% url 'aprobaciones:detalle' s.pk %}" class="list-group-item list-group-item-action"><strong>{{ s.titulo }}</strong><br><span class="small text-muted">{{ s.obra.nombre }}</span></a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if mis_borradores %}
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-pencil-square"></i> Mis borradores y observadas</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for s in mis_borradores %}
+          <a href="{% url 'aprobaciones:detalle' s.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"><span>{{ s.titulo }}</span>{% include "aprobaciones/_estado.html" with s=s %}</a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if respondidas %}
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-reply"></i> Respuestas recientes del cliente</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for s in respondidas %}
+          <a href="{% url 'aprobaciones:detalle' s.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"><span>{{ s.titulo }}</span>{% include "aprobaciones/_estado.html" with s=s %}</a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    {% if comunicados_sin_leer %}
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-megaphone"></i> Comunicados sin leer</h2></div>
+      <ul class="list-group list-group-flush">
+        {% for e in comunicados_sin_leer %}
+          <a href="{% url 'comunicados:detalle' e.comunicado.pk %}" class="list-group-item list-group-item-action"><strong>{{ e.comunicado.asunto }}</strong><br><span class="small text-muted">{{ e.comunicado.autor.nombre_completo }} · {{ e.comunicado.creado|timesince }}</span></a>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

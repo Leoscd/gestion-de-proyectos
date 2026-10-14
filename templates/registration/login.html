@@ -1,0 +1,21 @@
+{% extends "registration/_publico.html" %}
+{% block titulo %}Ingresar{% endblock %}
+{% block caja %}
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% if form.errors %}
+    <div class="alert alert-danger small">El email o la contraseña no son correctos.</div>
+  {% endif %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="mb-3">
+    <label class="form-label" for="id_username">Email</label>
+    <input type="email" name="username" id="id_username" class="form-control" autocomplete="email" autofocus required value="{{ form.username.value|default:'' }}">
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="id_password">Contraseña</label>
+    <input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required>
+  </div>
+  <button class="btn btn-dark w-100">Ingresar</button>
+  <div class="text-center mt-3"><a href="{% url 'password_reset' %}" class="small">Olvidé mi contraseña</a></div>
+</form>
+{% endblock %}

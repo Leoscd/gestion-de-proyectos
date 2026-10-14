@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Clientes{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <h1>Clientes</h1>
+  <div class="d-flex gap-2">
+    <form class="d-flex" method="get"><input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Buscar cliente"></form>
+    <a href="{% url 'cuentas:cliente_nuevo' %}" class="btn btn-dark text-nowrap"><i class="bi bi-plus-lg"></i> Nuevo cliente</a>
+  </div>
+</div>
+<div class="tarjeta">
+  <div class="table-responsive">
+    <table class="table table-hover table-tarjeta">
+      <thead><tr><th>Cliente</th><th>Contacto</th><th>Obras</th><th>Acceso al portal</th></tr></thead>
+      <tbody>
+      {% for c in clientes %}
+        <tr>
+          <td><a href="{% url 'cuentas:cliente' c.pk %}" class="fw-semibold">{{ c.nombre }}</a>{% if c.cuit %}<div class="small text-muted">{{ c.cuit }}</div>{% endif %}</td>
+          <td class="small">{{ c.email|default:"" }}<br>{{ c.telefono|default:"" }}</td>
+          <td>{{ c.obras.all|length }}</td>
+          <td>{% with n=c.usuarios.all|length %}{% if n %}<span class="badge text-bg-success">{{ n }} persona{{ n|pluralize:"s" }}</span>{% else %}<span class="badge text-bg-secondary">Sin acceso</span>{% endif %}{% endwith %}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4"><div class="lista-vacia"><i class="bi bi-person-vcard"></i>No hay clientes cargados.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

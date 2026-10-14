@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block titulo %}{% if cliente %}Editar {{ cliente }}{% else %}Nuevo cliente{% endif %}{% endblock %}
+{% block migas %}<nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'cuentas:clientes' %}">Clientes</a></li><li class="breadcrumb-item active">{% if cliente %}{{ cliente }}{% else %}Nuevo{% endif %}</li></ol></nav>{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo"><h1>{% if cliente %}Editar cliente{% else %}Nuevo cliente{% endif %}</h1></div>
+<div class="tarjeta" style="max-width: 720px">
+  <div class="tarjeta-cuerpo">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "includes/errores_form.html" %}
+      {% include "includes/campo.html" with campo=form.nombre %}
+      <div class="row">
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.cuit %}</div>
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.telefono %}</div>
+      </div>
+      {% include "includes/campo.html" with campo=form.email %}
+      {% include "includes/campo.html" with campo=form.direccion %}
+      {% include "includes/campo.html" with campo=form.notas %}
+      <button class="btn btn-dark"><i class="bi bi-check-lg"></i> Guardar</button>
+      <a href="{% if cliente %}{% url 'cuentas:cliente' cliente.pk %}{% else %}{% url 'cuentas:clientes' %}{% endif %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

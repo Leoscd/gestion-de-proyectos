@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load core_tags %}
+{% block titulo %}Archivos{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <h1>Archivos</h1>
+  <div class="d-flex gap-2">
+    <a href="{% url 'documentos:papelera' %}" class="btn btn-outline-secondary"><i class="bi bi-trash"></i> Papelera{% if en_papelera %} <span class="badge text-bg-secondary">{{ en_papelera }}</span>{% endif %}</a>
+    <a href="{% url 'documentos:subir' %}{% if f.obra and f.obra != 'general' %}?obra={{ f.obra }}{% endif %}" class="btn btn-dark"><i class="bi bi-upload"></i> Subir archivos</a>
+  </div>
+</div>
+
+<ul class="nav nav-pills mb-3 small">
+  <li class="nav-item"><a class="nav-link {% if not f.vista %}active{% endif %}" href="?{% query_con vista='' pagina='' %}">Vigentes</a></li>
+  <li class="nav-item"><a class="nav-link {% if f.vista == 'mios' %}active{% endif %}" href="?{% query_con vista='mios' pagina='' %}">Subidos por mí</a></li>
+  <li class="nav-item"><a class="nav-link {% if f.vista == 'archivados' %}active{% endif %}" href="?{% query_con vista='archivados' pagina='' %}">Archivados</a></li>
+</ul>
+
+<form class="row g-2 mb-3" method="get">
+  <input type="hidden" name="vista" value="{{ f.vista }}">
+  <div class="col-md-3"><input type="search" name="q" value="{{ f.q }}" class="form-control" placeholder="Título, N° de plano, etiqueta…"></div>
+  <div class="col-6 col-md-3">
+    <select name="obra" class="form-select" onchange="this.form.submit()">
+      <option value="">Todas las obras</option>
+      <option value="general" {% if f.obra == "general" %}selected{% endif %}>Biblioteca general</option>
+      {% for o in obras %}<option value="{{ o.pk }}" {% if f.obra == o.pk|stringformat:"s" %}selected{% endif %}>{{ o.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="tipo" class="form-select" onchange="this.form.submit()">
+      <option value="">Todos los tipos</option>
+      {% for v, t in tipos %}<option value="{{ v }}" {% if f.tipo == v %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="area" class="form-select" onchange="this.form.submit()">
+      <option value="">Todas las áreas</option>
+      {% for a in areas %}<option value="{{ a.pk }}" {% if f.area == a.pk|stringformat:"s" %}selected{% endif %}>{{ a.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="acceso" class="form-select" onchange="this.form.submit()">
+      <option value="">Cualquier acceso</option>
+      {% for v, t in accesos %}<option value="{{ v }}" {% if f.acceso == v %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+</form>
+
+<div class="tarjeta">
+  <div class="table-responsive">
+    <table class="table table-hover table-tarjeta">
+      <thead><tr><th></th><th>Documento</th><th>Quién lo ve</th><th>Actualizado</th><th></th></tr></thead>
+      <tbody>
+        {% for doc in pagina %}
+          {% include "documentos/_fila.html" with mostrar_obra=True %}
+        {% empty %}
+          <tr><td colspan="5"><div class="lista-vacia"><i class="bi bi-folder2-open"></i>No hay documentos con esos filtros.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% include "includes/paginacion.html" %}
+{% endblock %}

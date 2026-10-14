@@ -1,0 +1,77 @@
+{% load core_tags %}
+<div class="row g-3">
+  <div class="col-lg-3">
+    <div class="tarjeta">
+      <div class="list-group list-group-flush">
+        <a href="?tab=archivos" class="list-group-item list-group-item-action d-flex justify-content-between {% if not tipo_actual %}active{% endif %}"><span><i class="bi bi-folder2-open"></i> Todos</span><span class="badge {% if not tipo_actual %}text-bg-light{% else %}text-bg-secondary{% endif %}">{{ total_documentos }}</span></a>
+        {% for c in carpetas %}
+          <a href="?tab=archivos&tipo={{ c.tipo }}" class="list-group-item list-group-item-action d-flex justify-content-between {% if tipo_actual == c.tipo %}active{% endif %} {% if not c.cantidad %}text-muted{% endif %}">
+            <span><i class="bi bi-folder{% if c.cantidad %}-fill{% endif %}"></i> {{ c.nombre }}</span>{% if c.cantidad %}<span class="badge {% if tipo_actual == c.tipo %}text-bg-light{% else %}text-bg-secondary{% endif %}">{{ c.cantidad }}</span>{% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% if puede_subir %}<a href="{% url 'documentos:subir' %}?obra={{ obra.pk }}{% if tipo_actual %}&tipo={{ tipo_actual }}{% endif %}" class="btn btn-dark w-100 mt-3"><i class="bi bi-upload"></i> Subir archivos</a>{% endif %}
+  </div>
+
+  <div class="col-lg-9">
+    {% if tipo_actual == "planos" %}
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2>Índice de planos</h2><span class="small text-muted">En obra va siempre la última revisión aprobada</span></div>
+      <div class="table-responsive">
+        <table class="table table-hover table-tarjeta">
+          <thead><tr><th>N°</th><th>Título</th><th>Especialidad</th><th>Rev</th><th>Estado</th><th>Quién lo ve</th></tr></thead>
+          <tbody>
+          {% for doc in documentos %}{% with v=doc.version_actual %}
+            <tr>
+              <td class="font-monospace fw-semibold">{{ doc.numero|default:"—" }}</td>
+              <td><a href="{% url 'documentos:detalle' doc.pk %}">{{ doc.titulo }}</a>{% if doc.escala %}<div class="small text-muted">Esc. {{ doc.escala }}</div>{% endif %}</td>
+              <td class="small">{{ doc.get_especialidad_display|default:"—" }}</td>
+              <td class="font-monospace">{{ v.revision }}{% if v.editable %} <i class="bi bi-file-earmark-ruled text-muted" title="Tiene editable"></i>{% endif %}</td>
+              <td>{% include "documentos/_estado_plano.html" %}</td>
+              <td>{% include "documentos/_acceso.html" %}</td>
+            </tr>
+          {% endwith %}{% empty %}
+            <tr><td colspan="6"><div class="lista-vacia"><i class="bi bi-rulers"></i>Todavía no hay planos en esta obra.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% elif tipo_actual == "fotos" %}
+    <div class="row g-2">
+      {% for doc in documentos %}{% with v=doc.version_actual %}
+        <div class="col-6 col-md-4 col-xl-3">
+          <a href="{% url 'documentos:detalle' doc.pk %}" class="tarjeta d-block text-decoration-none text-body h-100 overflow-hidden">
+            {% if v.vista_previa %}<img src="{% url 'documentos:miniatura' v.pk %}" alt="{{ doc.titulo }}" loading="lazy" style="width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block">
+            {% else %}<div class="d-flex align-items-center justify-content-center bg-light" style="aspect-ratio: 4 / 3"><i class="bi bi-image fs-1 text-muted"></i></div>{% endif %}
+            <div class="p-2 small">
+              <div class="text-truncate fw-semibold">{{ doc.titulo }}</div>
+              <div class="text-muted d-flex justify-content-between"><span>{{ doc.fecha_documento|date:"d/m/Y"|default:"" }}</span>{% if doc.acceso == "cliente" %}<i class="bi bi-eye text-success" title="Lo ve el cliente"></i>{% endif %}</div>
+            </div>
+          </a>
+        </div>
+      {% endwith %}{% empty %}
+        <div class="col-12"><div class="tarjeta lista-vacia"><i class="bi bi-camera"></i>Todavía no hay fotos de esta obra.</div></div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="tarjeta">
+      <div class="table-responsive">
+        <table class="table table-hover table-tarjeta">
+          <thead><tr><th></th><th>Documento</th><th>Quién lo ve</th><th>Actualizado</th><th></th></tr></thead>
+          <tbody>
+          {% for doc in documentos %}
+            {% include "documentos/_fila.html" %}
+          {% empty %}
+            <tr><td colspan="5"><div class="lista-vacia"><i class="bi bi-folder2-open"></i>No hay documentos{% if tipo_actual %} de este tipo{% endif %} en esta obra.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>

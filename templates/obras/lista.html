@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titulo %}Obras{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <h1>Obras</h1>
+  {% if puede_crear %}<a href="{% url 'obras:nueva' %}" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Nueva obra</a>{% endif %}
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-sm-5 col-lg-4"><input type="search" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre, código, cliente o localidad"></div>
+  <div class="col-6 col-sm-3 col-lg-2">
+    <select name="estado" class="form-select" onchange="this.form.submit()">
+      <option value="" {% if not estado %}selected{% endif %}>Todos los estados</option>
+      {% for v, t in estados %}<option value="{{ v }}" {% if v == estado %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-sm-3 col-lg-2">
+    <select name="etapa" class="form-select" onchange="this.form.submit()">
+      <option value="">Todas las etapas</option>
+      {% for v, t in etapas %}<option value="{{ v }}" {% if v == etapa %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+
+<div class="tarjeta">
+  <div class="table-responsive">
+    <table class="table table-hover table-tarjeta">
+      <thead><tr><th>Obra</th><th>Cliente</th><th>Etapa</th><th style="width: 22%">Avance</th><th>Equipo</th><th>Fin estimado</th></tr></thead>
+      <tbody>
+      {% for o in obras %}
+        <tr>
+          <td><a href="{% url 'obras:detalle' o.pk %}" class="fw-semibold">{{ o.nombre }}</a><div class="small text-muted">{{ o.codigo }}{% if o.localidad %} · {{ o.localidad }}{% endif %}</div></td>
+          <td>{{ o.cliente }}</td>
+          <td>{% include "obras/_etapa.html" with obra=o %}</td>
+          <td>{% include "obras/_avance.html" with obra=o %}</td>
+          <td><i class="bi bi-people text-muted"></i> {{ o.personas }}</td>
+          <td class="small">{{ o.fecha_fin_estimada|date:"d/m/Y"|default:"—" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6"><div class="lista-vacia"><i class="bi bi-buildings"></i>
+          {% if q or etapa or estado != "activa" %}No hay obras con esos filtros.{% elif perm.gerencia %}Todavía no hay obras. Creá la primera.{% else %}Todavía no te asignaron a ninguna obra.{% endif %}
+        </div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,4 @@
+{% if form.non_field_errors %}
+<div class="alert alert-danger">{% for e in form.non_field_errors %}<div>{{ e }}</div>{% endfor %}</div>
+{% endif %}
+{% for campo in form.hidden_fields %}{{ campo }}{% for e in campo.errors %}<div class="alert alert-danger">{{ e }}</div>{% endfor %}{% endfor %}

@@ -1,0 +1,12 @@
+{% autoescape off %}Hola {{ usuario.first_name|default:usuario.email }}:
+
+{{ estudio }} te dio acceso a su sistema de gestión de obras{% if usuario.es_cliente %}, donde vas a poder seguir tu obra, ver los archivos compartidos y aprobar gastos y decisiones{% endif %}.
+
+Para elegir tu contraseña entrá a este enlace:
+{{ enlace }}
+
+Después vas a poder ingresar siempre desde {{ sitio }} con tu email ({{ usuario.email }}).
+
+Saludos,
+{{ estudio }}
+{% endautoescape %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block titulo %}Papelera{% endblock %}
+{% block migas %}<nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'documentos:lista' %}">Archivos</a></li><li class="breadcrumb-item active">Papelera</li></ol></nav>{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo"><h1>Papelera</h1></div>
+<p class="text-muted small">Los documentos de la papelera se pueden restaurar en cualquier momento. No se vacía sola.{% if puede_eliminar %} Como Gerencia, podés borrarlos definitivamente: el registro de actividad conserva qué eran y quién los borró.{% endif %}</p>
+<div class="tarjeta">
+  <div class="table-responsive">
+    <table class="table table-tarjeta">
+      <thead><tr><th>Documento</th><th>Obra</th><th>Enviado a la papelera</th><th></th></tr></thead>
+      <tbody>
+      {% for doc in documentos %}
+        <tr>
+          <td><a href="{% url 'documentos:detalle' doc.pk %}">{{ doc }}</a><div class="small text-muted">{{ doc.get_tipo_display }}</div></td>
+          <td>{{ doc.obra.nombre|default:"Biblioteca general" }}</td>
+          <td class="small">{{ doc.papelera_en|date:"d/m/Y H:i" }}<br><span class="text-muted">{{ doc.papelera_por.nombre_completo|default:"—" }}</span></td>
+          <td class="text-end text-nowrap">
+            <form method="post" action="{% url 'documentos:restaurar' doc.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-dark">Restaurar</button></form>
+            {% if puede_eliminar %}<a href="{% url 'documentos:eliminar' doc.pk %}" class="btn btn-sm btn-outline-danger">Borrar</a>{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4"><div class="lista-vacia"><i class="bi bi-trash"></i>La papelera está vacía.</div></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

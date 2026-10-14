@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}Mi perfil{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo"><h1>Mi perfil</h1></div>
+<div class="tarjeta" style="max-width: 640px">
+  <div class="tarjeta-cuerpo">
+    <p class="small text-muted mb-3">Ingresás con <strong>{{ user.email }}</strong>.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "includes/errores_form.html" %}
+      <div class="row">
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.first_name %}</div>
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.last_name %}</div>
+      </div>
+      {% if form.cargo %}{% include "includes/campo.html" with campo=form.cargo %}{% endif %}
+      {% include "includes/campo.html" with campo=form.telefono %}
+      <h2 class="h6 mt-4">¿Por dónde querés recibir los avisos?</h2>
+      <p class="small text-muted">Los avisos siempre quedan también dentro del sistema.</p>
+      {% include "includes/campo.html" with campo=form.notif_email %}
+      {% include "includes/campo.html" with campo=form.notif_whatsapp %}
+      <button class="btn btn-dark"><i class="bi bi-check-lg"></i> Guardar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Áreas y equipos{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <h1>Áreas y equipos</h1>
+  {% if puede_gestionar %}
+  <a href="{% url 'cuentas:persona_nueva' %}" class="btn btn-dark"><i class="bi bi-person-plus"></i> Designar persona</a>
+  {% endif %}
+</div>
+<div class="row g-3">
+  {% for area in areas %}
+  <div class="col-md-6 col-xl-4">
+    <div class="tarjeta h-100">
+      <div class="tarjeta-cabecera">
+        <h2>{{ area.nombre }}</h2>
+        <span class="badge text-bg-light">{{ area.membresias.all|length }}</span>
+      </div>
+      <div class="tarjeta-cuerpo">
+        {% if area.descripcion %}<p class="small text-muted">{{ area.descripcion }}</p>{% endif %}
+        <ul class="list-unstyled mb-0">
+          {% for m in area.membresias.all %}
+          <li class="d-flex align-items-center gap-2 py-1">
+            <i class="bi bi-person-circle text-secondary"></i>
+            <span class="flex-grow-1">{{ m.usuario.nombre_completo }}{% if m.usuario.cargo %} <span class="text-muted small">· {{ m.usuario.cargo }}</span>{% endif %}</span>
+            {% if m.rol == "responsable" %}<span class="badge text-bg-warning">Responsable</span>{% endif %}
+          </li>
+          {% empty %}
+          <li class="text-muted small">Todavía no hay personas en esta área.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+<div class="d-flex align-items-center gap-2">
+  <div class="progress flex-grow-1" role="progressbar" aria-label="Avance" aria-valuenow="{{ obra.avance }}" aria-valuemin="0" aria-valuemax="100" style="height: 8px">
+    <div class="progress-bar {% if obra.avance == 100 %}bg-success{% else %}bg-primary{% endif %}" style="width: {{ obra.avance }}%"></div>
+  </div>
+  <span class="small text-muted" style="min-width: 2.6rem">{{ obra.avance }}%</span>
+</div>

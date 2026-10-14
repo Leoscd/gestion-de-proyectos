@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block titulo %}{{ obra.nombre }}{% endblock %}
+{% block migas %}<nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'obras:lista' %}">Obras</a></li><li class="breadcrumb-item active">{{ obra.nombre }}</li></ol></nav>{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo">
+  <div>
+    <div class="small text-muted">{{ obra.codigo }}{% if obra.superficie_m2 %} · {{ obra.superficie_m2|floatformat:"-2" }} m²{% endif %}</div>
+    <h1>{{ obra.nombre }}</h1>
+    <div class="small text-muted">{{ obra.cliente }}{% if obra.direccion %} · {{ obra.direccion }}{% endif %}{% if obra.localidad %}, {{ obra.localidad }}{% endif %}</div>
+  </div>
+  {% if puede_editar %}<a href="{% url 'obras:editar' obra.pk %}" class="btn btn-outline-dark"><i class="bi bi-pencil"></i> Editar datos</a>{% endif %}
+</div>
+
+<ul class="nav nav-tabs mb-3">
+  {% for clave, texto, icono in pestanas %}
+  <li class="nav-item"><a class="nav-link {% if tab == clave %}active{% endif %}" href="?tab={{ clave }}"><i class="bi bi-{{ icono }}"></i> {{ texto }}</a></li>
+  {% endfor %}
+</ul>
+
+{% if tab == "resumen" %}
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cuerpo">
+        <div class="row g-3 align-items-center">
+          <div class="col-sm-4">
+            <div class="dato-etiqueta">Etapa</div>
+            <div class="fs-5 fw-semibold">{{ obra.get_etapa_display }}</div>
+            {% if obra.estado != "activa" %}<span class="badge {% if obra.estado == 'pausada' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">{{ obra.get_estado_display }}</span>{% endif %}
+          </div>
+          <div class="col-sm-8">
+            <div class="dato-etiqueta mb-1">Avance de obra</div>
+            <div class="d-flex align-items-baseline gap-2"><span class="dato-numero">{{ obra.avance }}%</span></div>
+            {% include "obras/_avance.html" %}
+          </div>
+        </div>
+        <hr>
+        <div class="row g-3 small">
+          <div class="col-6 col-md-3"><div class="dato-etiqueta">Inicio</div>{{ obra.fecha_inicio|date:"d/m/Y"|default:"—" }}</div>
+          <div class="col-6 col-md-3"><div class="dato-etiqueta">Fin estimado</div>{{ obra.fecha_fin_estimada|date:"d/m/Y"|default:"—" }}</div>
+          <div class="col-6 col-md-3"><div class="dato-etiqueta">Hitos cumplidos</div>{{ hitos_hechos }} de {{ hitos|length }}</div>
+          <div class="col-6 col-md-3"><div class="dato-etiqueta">Equipo</div>{{ personas_equipo }} persona{{ personas_equipo|pluralize }}</div>
+        </div>
+        {% if obra.descripcion %}<hr><p class="mb-0">{{ obra.descripcion|linebreaksbr }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="tarjeta mb-3">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-flag"></i> Próximo hito</h2></div>
+      <div class="tarjeta-cuerpo">
+        {% if proximo_hito %}
+          <div class="fw-semibold">{{ proximo_hito.titulo }}</div>
+          <div class="small text-muted">{{ proximo_hito.fecha|date:"d/m/Y" }} · {% if proximo_hito.fecha < hoy %}<span class="text-danger">vencido</span>{% else %}en {{ proximo_hito.fecha|timeuntil }}{% endif %}</div>
+        {% else %}<span class="text-muted small">No hay hitos pendientes.</span>{% endif %}
+      </div>
+    </div>
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2><i class="bi bi-people"></i> Responsables</h2><a href="?tab=equipo" class="small">Ver equipo</a></div>
+      <ul class="list-group list-group-flush">
+        {% for a in asignaciones %}{% if a.es_responsable %}
+          <li class="list-group-item small"><strong>{{ a.usuario.nombre_completo }}</strong><br><span class="text-muted">{{ a.area.nombre }}{% if a.funcion %} · {{ a.funcion }}{% endif %}</span></li>
+        {% endif %}{% empty %}
+          <li class="list-group-item small text-muted">Sin equipo asignado.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% elif tab == "equipo" %}
+<div class="row g-3">
+  <div class="{% if puede_editar %}col-lg-8{% else %}col-12{% endif %}">
+    <div class="tarjeta">
+      <div class="table-responsive">
+        <table class="table table-tarjeta">
+          <thead><tr><th>Persona</th><th>Área</th><th>Función</th><th>Contacto</th>{% if puede_editar %}<th></th>{% endif %}</tr></thead>
+          <tbody>
+          {% for a in asignaciones %}
+            <tr>
+              <td><strong>{{ a.usuario.nombre_completo }}</strong>{% if a.es_responsable %} <span class="badge text-bg-warning">Responsable</span>{% endif %}{% if not a.usuario.is_active %} <span class="badge text-bg-secondary">Inactivo</span>{% endif %}</td>
+              <td>{{ a.area.nombre }}</td>
+              <td class="small">{{ a.funcion|default:"—" }}</td>
+              <td class="small">{{ a.usuario.email }}{% if a.usuario.telefono %}<br>{{ a.usuario.telefono }}{% endif %}</td>
+              {% if puede_editar %}
+              <td class="text-end text-nowrap">
+                <form method="post" action="{% url 'obras:equipo_responsable' obra.pk a.pk %}" class="d-inline">{% csrf_token %}
+                  <button class="btn btn-sm btn-outline-secondary" title="{% if a.es_responsable %}Quitar como responsable{% else %}Hacer responsable{% endif %}"><i class="bi bi-star{% if a.es_responsable %}-fill text-warning{% endif %}"></i></button>
+                </form>
+                <form method="post" action="{% url 'obras:equipo_quitar' obra.pk a.pk %}" class="d-inline" data-confirmar="¿Quitar a {{ a.usuario.nombre_completo }} del equipo de esta obra?">{% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" title="Quitar del equipo"><i class="bi bi-x-lg"></i></button>
+                </form>
+              </td>
+              {% endif %}
+            </tr>
+          {% empty %}
+            <tr><td colspan="5"><div class="lista-vacia"><i class="bi bi-people"></i>Todavía no hay nadie asignado a esta obra.</div></td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <p class="small text-muted mt-2">Solo las personas del equipo ven esta obra, sus archivos y sus solicitudes. Los responsables pueden editarla. Gerencia ve todas.</p>
+  </div>
+  {% if puede_editar %}
+  <div class="col-lg-4">
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2>Sumar al equipo</h2></div>
+      <div class="tarjeta-cuerpo">
+        <form method="post" action="{% url 'obras:equipo_agregar' obra.pk %}" novalidate>
+          {% csrf_token %}
+          {% include "includes/campo.html" with campo=form_asignacion.usuario %}
+          {% include "includes/campo.html" with campo=form_asignacion.area %}
+          {% include "includes/campo.html" with campo=form_asignacion.funcion %}
+          {% include "includes/campo.html" with campo=form_asignacion.es_responsable %}
+          <button class="btn btn-dark w-100"><i class="bi bi-person-plus"></i> Sumar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% elif tab == "hitos" %}
+<div class="row g-3">
+  <div class="{% if puede_editar %}col-lg-8{% else %}col-12{% endif %}">
+    <div class="tarjeta">
+      <ul class="list-group list-group-flush">
+        {% for h in hitos %}
+        <li class="list-group-item d-flex align-items-center gap-3">
+          {% if puede_editar %}
+          <form method="post" action="{% url 'obras:hito_alternar' obra.pk h.pk %}">{% csrf_token %}
+            <button class="btn btn-sm {% if h.completado %}btn-success{% else %}btn-outline-secondary{% endif %}" title="{% if h.completado %}Marcar como pendiente{% else %}Marcar como cumplido{% endif %}"><i class="bi bi-check-lg"></i></button>
+          </form>
+          {% else %}
+          <i class="bi {% if h.completado %}bi-check-circle-fill text-success{% else %}bi-circle text-muted{% endif %}"></i>
+          {% endif %}
+          <div class="flex-grow-1">
+            <div class="{% if h.completado %}text-muted text-decoration-line-through{% else %}fw-semibold{% endif %}">{{ h.titulo }}</div>
+            <div class="small text-muted">{{ h.fecha|date:"d/m/Y" }}{% if not h.visible_cliente %} · <i class="bi bi-eye-slash"></i> solo interno{% endif %}</div>
+          </div>
+          {% if puede_editar %}
+          <form method="post" action="{% url 'obras:hito_borrar' obra.pk h.pk %}" data-confirmar="¿Quitar el hito «{{ h.titulo }}»?">{% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger" title="Quitar hito"><i class="bi bi-trash"></i></button>
+          </form>
+          {% endif %}
+        </li>
+        {% empty %}
+        <li class="list-group-item"><div class="lista-vacia"><i class="bi bi-flag"></i>Todavía no hay hitos cargados.</div></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% if puede_editar %}
+  <div class="col-lg-4">
+    <div class="tarjeta">
+      <div class="tarjeta-cabecera"><h2>Nuevo hito</h2></div>
+      <div class="tarjeta-cuerpo">
+        <form method="post" action="{% url 'obras:hito_agregar' obra.pk %}" novalidate>
+          {% csrf_token %}
+          {% include "includes/campo.html" with campo=form_hito.titulo %}
+          {% include "includes/campo.html" with campo=form_hito.fecha %}
+          {% include "includes/campo.html" with campo=form_hito.visible_cliente %}
+          <button class="btn btn-dark w-100"><i class="bi bi-plus-lg"></i> Agregar hito</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% elif tab == "archivos" %}
+  {% include "documentos/_pestana_obra.html" %}
+
+{% elif tab == "solicitudes" %}
+  {% include "aprobaciones/_pestana_obra.html" %}
+
+{% elif tab == "actividad" %}
+<div class="tarjeta">
+  <div class="tarjeta-cabecera"><h2>Todo lo que pasó en esta obra</h2><span class="small text-muted">No se puede editar ni borrar</span></div>
+  <div class="tarjeta-cuerpo">
+    {% include "auditoria/_linea.html" with registros=pagina %}
+    {% include "includes/paginacion.html" %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

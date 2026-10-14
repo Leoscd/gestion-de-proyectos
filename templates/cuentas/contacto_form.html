@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Acceso al portal · {{ cliente }}{% endblock %}
+{% block migas %}<nav><ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'cuentas:clientes' %}">Clientes</a></li><li class="breadcrumb-item"><a href="{% url 'cuentas:cliente' cliente.pk %}">{{ cliente }}</a></li><li class="breadcrumb-item active">{% if contacto %}{{ contacto.nombre_completo }}{% else %}Dar acceso{% endif %}</li></ol></nav>{% endblock %}
+{% block contenido %}
+<div class="pagina-titulo"><h1>{% if contacto %}Editar acceso{% else %}Dar acceso al portal{% endif %}</h1></div>
+<div class="tarjeta" style="max-width: 720px">
+  <div class="tarjeta-cuerpo">
+    <p class="small text-muted">Esta persona va a poder ver las obras de <strong>{{ cliente }}</strong>, los archivos compartidos y aprobar o rechazar solicitudes.</p>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "includes/errores_form.html" %}
+      <div class="row">
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.first_name %}</div>
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.last_name %}</div>
+      </div>
+      <div class="row">
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.email %}</div>
+        <div class="col-sm-6">{% include "includes/campo.html" with campo=form.telefono %}</div>
+      </div>
+      {% include "includes/campo.html" with campo=form.notif_email %}
+      {% include "includes/campo.html" with campo=form.notif_whatsapp %}
+      {% include "includes/campo.html" with campo=form.is_active %}
+      <hr>
+      {% include "includes/campo.html" with campo=form.clave_inicial %}
+      {% include "includes/campo.html" with campo=form.enviar_invitacion %}
+      <button class="btn btn-dark"><i class="bi bi-check-lg"></i> Guardar</button>
+      <a href="{% url 'cuentas:cliente' cliente.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% load core_tags %}{% with tipo=campo|tipo_campo %}
+{% if tipo == "casilla" %}
+<div class="form-check mb-3">
+  {{ campo|bs }}
+  <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+  {% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}
+  {% for e in campo.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+</div>
+{% elif tipo == "casillas" or tipo == "opciones" %}
+<div class="mb-3">
+  <div class="form-label">{{ campo.label }}</div>
+  {% for opcion in campo %}
+  <div class="form-check">
+    {{ opcion.tag }}
+    <label class="form-check-label" for="{{ opcion.id_for_label }}">{{ opcion.choice_label }}</label>
+  </div>
+  {% endfor %}
+  {% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}
+  {% for e in campo.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+</div>
+{% else %}
+<div class="mb-3">
+  <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}{% if campo.field.required %} <span class="text-danger">*</span>{% endif %}</label>
+  {{ campo|bs }}
+  {% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}
+  {% for e in campo.errors %}<div class="invalid-feedback d-block">{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
+{% endwith %}

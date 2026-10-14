@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load core_tags %}
+{% block titulo %}Borrar {{ doc }}{% endblock %}
+{% block contenido %}
+<div class="tarjeta mx-auto" style="max-width: 640px">
+  <div class="tarjeta-cuerpo p-4">
+    <h1 class="h4"><i class="bi bi-exclamation-triangle text-danger"></i> Borrar definitivamente</h1>
+    <p>Vas a borrar <strong>«{{ doc }}»</strong> y sus {{ versiones|length }} versión(es). <strong>Los archivos se eliminan del disco y no se pueden recuperar.</strong></p>
+    <ul class="small">
+      {% for v in versiones %}<li>Rev {{ v.revision }} · {{ v.nombre_original }} ({{ v.tamano|tamano }}){% if v.editable %} + {{ v.editable_nombre }}{% endif %}</li>{% endfor %}
+    </ul>
+    <p class="small text-muted">El registro de actividad va a conservar qué era, quién lo subió, su huella digital y que lo borraste vos.</p>
+    <form method="post" class="d-flex gap-2">{% csrf_token %}
+      <button class="btn btn-danger">Sí, borrar definitivamente</button>
+      <a href="{% url 'documentos:detalle' doc.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
